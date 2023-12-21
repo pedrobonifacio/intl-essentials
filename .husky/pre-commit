@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+npm run lint
+
+git fetch origin main
+CHANGED=$(git diff --name-only FETCH_HEAD -- .changeset | wc -l)
+
+if [ $CHANGED -eq 0 ]; then
+  echo "No changes in .changeset, failing commit"
+  exit 1
+fi

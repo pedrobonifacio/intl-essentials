@@ -1,0 +1,36 @@
+{
+  "name": "intl-essentials",
+  "author": "Pedro Bonifacio",
+  "description": "",
+  "version": "0.1.0",
+  "homepage": "https://github.com/pedrobonifacio/intl-essentials/tree/main/packages/intl-essentials",
+  "repository": "https://github.com/pedrobonifacio/intl-essentials.git",
+  "main": "dist/index",
+  "types": "dist/index",
+  "files": [
+    "dist"
+  ],
+  "license": "UNLICENSED",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "engines": {
+    "node": ">18.0.0",
+    "pnpm": ">=8"
+  },
+  "scripts": {
+    "test:unit": "cd .. && pnpm test:unit packages/intl-essentials",
+    "test:unit:watch": "cd .. && pnpm test:unit:watch packages/intl-essentials",
+    "build": "pnpm clean && pnpm compile",
+    "clean": "rm -rf ./dist",
+    "compile": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.1.0",
+    "@types/node": "^20.8.2",
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,0 +1,84 @@
+name: beta-release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.5.0
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm -r install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_PACKAGES }}
+
+      - name: Run Unit Tests
+        run: pnpm run test:unit
+
+      - name: Run E2E Tests
+        run: pnpm run test:e2e
+
+  publish-beta:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.5.0
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm -r install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_PACKAGES }}
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Bump Versions
+        run: |
+          pnpm changeset pre enter rc-${{ github.run_number }}
+          pnpm changeset version
+          pnpm changeset pre exit
+
+      - name: Publish Packages
+        run: pnpm -r --filter !rediredi-modules publish --tag rc-${{ github.run_number }} --publish-branch ${{ github.head_ref }} --no-git-checks --report-summary
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Upload Report Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: report-summary
+          path: ./pnpm-publish-summary.json
+          if-no-files-found: error

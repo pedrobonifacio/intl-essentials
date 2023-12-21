@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "module": "commonjs",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2020",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+
+  "exclude": ["node_modules", "dist"]
+}

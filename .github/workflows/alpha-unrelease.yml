@@ -1,0 +1,35 @@
+name: alpha-unrelease
+
+on:
+  delete:
+    branches-ignore:
+      - main
+
+jobs:
+  unpublish-alpha:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Delete Package 'modules' Versions
+        uses: actions/delete-package-versions@v3
+        with:
+          package-name: 'modules'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 10
+          delete-only-pre-release-versions: 'true'
+      - name: Delete Package 'types' Versions
+        uses: actions/delete-package-versions@v3
+        with:
+          package-name: 'types'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 10
+          delete-only-pre-release-versions: 'true'
+      - name: Delete Package 'utils' Versions
+        uses: actions/delete-package-versions@v3
+        with:
+          package-name: 'utils'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 10
+          delete-only-pre-release-versions: 'true'

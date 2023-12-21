@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+
+  #exclude paths
+  - '!**/tests/**'
+  - '!.github/**'
+  - '!node_modules/**'

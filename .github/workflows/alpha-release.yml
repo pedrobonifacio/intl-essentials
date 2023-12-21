@@ -1,0 +1,126 @@
+name: alpha-release
+
+on:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name != 'delete'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Check for changes in .changeset
+        id: check
+        run: |
+          git fetch origin main
+          CHANGED=$(git diff --name-only FETCH_HEAD -- .changeset | wc -l)
+          echo "CHANGED=$CHANGED" >> $GITHUB_ENV
+  
+      - name: Verify if there are changes on the changeset 
+        run: |
+          if [ $CHANGED -eq 0 ]; then
+            echo "No changes in .changeset, failing job"
+            exit 1
+          fi
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.5.0
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v3.4.0
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm -r install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_PACKAGES }}
+
+      - name: Run Lint
+        run: pnpm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name != 'delete'
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.5.0
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm -r install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_PACKAGES }}
+
+      - name: Run Unit Tests
+        run: pnpm run test:unit
+
+      - name: Run E2E Tests
+        run: pnpm run test:e2e
+
+  publish-alpha:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'delete'
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.5.0
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm -r install --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_GITHUB_PACKAGES }}
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Bump Versions
+        run: |
+          pnpm changeset pre enter pr-${{ github.event.number }}-${{ github.run_number }}
+          pnpm changeset version
+          pnpm changeset pre exit
+
+      - name: Publish Packages
+        run: pnpm -r --filter !rediredi-modules publish --tag pr-${{ github.event.number }}-${{ github.run_number }} --publish-branch ${{ github.head_ref }} --no-git-checks --report-summary
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Upload Report Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: report-summary
+          path: ./pnpm-publish-summary.json
+          if-no-files-found: error
