@@ -1,1 +1,1 @@
-export const a = {d:1}
+export const a = { d: 1 };
